@@ -1,0 +1,162 @@
+<style>
+    body{
+        background:#333;
+        color:#f9f9f9;
+        font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+        display: grid;
+        grid-template-areas: "option option" "today graph";
+        grid-template-columns: auto 1fr;
+    }
+    #option{
+        grid-area: option;
+        place-self: center;
+        padding: 2rem;
+    }
+    #today{
+        grid-area: today;
+        padding: 0 2rem;
+        text-align: center;
+    }
+    #today .info{
+        font-size: 2rem;
+    }
+    #today #RollingSum{ color: #f63;  }
+    #today #RollingRate{ color:rgb(104, 204, 230); }
+    #today #Direction{ font-size: 1.5rem;}
+    #today .down{ color: #3c7;}
+    #today .up{ color: #c35;}
+    #graph-section{
+        grid-area: graph;
+        background-color: 	#213;
+        cursor: crosshair;
+    }
+    #graph .total{
+        stroke: #f63;
+        stroke-width: 3.6;
+        stroke-linecap: round;
+    }
+    #graph .rollingRate{
+        stroke: rgb(104, 204, 230);
+        stroke-width: 4;
+        stroke-linecap: round;
+    }
+    #graph .guideline{
+        stroke:#999;
+        stroke-width: 1;
+        stroke-linecap: square;
+    }
+    #graph .guidetext{
+        font: bold 5px sans-serif;
+        fill: #999;
+    }
+</style>
+<body>
+    <section id="option">
+        <label for="area">Select area:</label>
+        <select name="places" id="area" autofocus>
+                <option value="W06000012">Neath Port Talbot</option>
+                <option value="W06000015">Cardiff</option>
+                <option value="W06000011">Swansea</option>
+                <option value="W06000022">Newport</option>
+        </select>
+    </section>
+    <section id="today">
+        <h2 id="location" title="NO CODE">NO LOCATION</h2>
+        <h4 id="date">NO DATE</h4>
+        <p>Current Cases:</p><p id="RollingSum" class="info">NaN</p>
+        <p>Rolling Rate:</p><p id="RollingRate" class="info">NaN</p>
+        <p>Direction:</p><p id="Direction" >No idea [-]</p>
+    </section>
+    <section id="graph-section">
+        <svg viewBox="2 0 300 100">
+            <g id="scale" viewBox="0 0 20 100"></g>
+            <g id="graph" viewBox="0 0 300 100"></g>
+        </svg>
+    </section>
+</body>
+<script>
+    let locationElement = document.querySelector("#location");
+    let dateElement = document.querySelector("#date");
+    let rollingSumElement = document.querySelector("#RollingSum");
+    let rollingRateElement = document.querySelector("#RollingRate");
+    let directionElement = document.querySelector("#Direction");
+
+    // This is going to be the current info, and graph of the total cases over time (30 days?)
+    // I also want to be able to select the location
+    function makeFetch(area) {
+        //console.log(area)
+        let baseUrl = `https://api.coronavirus.data.gov.uk/v1/data?filters=areaCode=${area}`;
+        let structure = {
+            "date":"date",
+            "name":"areaName",
+            "code":"areaCode",
+            "total":"newCasesByPublishDateRollingSum", // Total cases on the interactive map
+            "rollingRate":"newCasesByPublishDateRollingRate", // Rolling rate on the interactive map
+            "direction":"newCasesByPublishDateDirection",
+        }
+        let s = JSON.stringify(structure);
+        let query = `${baseUrl}&structure=${s}`
+        fetch(query)
+        .then(res=>res.json())
+        .then(data=>dealWithTheResponseData(data.data))
+    }
+
+    function dealWithTheResponseData(responseData) {
+        // So the response data should be a list of data-objects
+        // the 0th object is the most recent and should be the data that fills out #today
+        // all of the data should then be used to create the graph, hopefull with a hover effect to see the [date,sum,rate] of that date using <title>.
+
+        // TODAY
+        let today = responseData[0];
+        locationElement.innerHTML = today.name;
+        locationElement.title = today.code;
+        dateElement.innerHTML = today.date;
+        rollingSumElement.innerHTML = today.total;
+        rollingRateElement.innerHTML = today.rollingRate;
+        directionElement.innerHTML = {"UP": "UP [^]", "DOWN": "DOWN [v]"}[today.direction];
+        directionElement.className = {"UP": "up", "DOWN": "down"}[today.direction];
+    
+        // GRAPH
+        makeAGraph(responseData);
+    }
+
+    function makeAGraph(dataPoints) {
+        let graphArea = document.querySelector("#graph");
+        graphArea.innerHTML = ""; // Initialise an empty graph
+        
+        let numberOfPoints = 60; //30;//dataPoints.length;//change depending on what I want;
+        dataPoints = dataPoints.slice(0,numberOfPoints); // trims datapoints down to a useful list;
+
+        let heighestPoint = 0; // finds the largest point, hopefully to set a max height
+        dataPoints.forEach(point => {
+            heighestPoint = Math.max(heighestPoint,point.total);
+        });
+
+        let bar = {width:300/numberOfPoints, height:90/heighestPoint}
+        
+        for(let h = 10; h <= 100; h+=10){ // This is to help with the scale and perspective
+            let heightText = heighestPoint/100 * h
+            graphArea.innerHTML += `<line class="guideline" x1=${0} x2=${300} y1=${100-h*0.9} y2=${100-h*0.9} ><title>${parseInt(heightText)}</title></line>`
+            graphArea.innerHTML += `<text class="guidetext" x=${5} y=${100-h*0.9}>${parseInt(heightText)}</text>`
+            graphArea.innerHTML += `<text class="guidetext" x=${150} y=${100-h*0.9}>${parseInt(heightText)}</text>`
+            graphArea.innerHTML += `<text class="guidetext" x=${275} y=${100-h*0.9}>${parseInt(heightText)}</text>`
+        }
+
+        dataPoints.forEach((point, index) => { // This is the plotting of the bars
+            let xPosition = (numberOfPoints - index) * bar.width
+            let height = 100 - (bar.height * point.total)
+            graphArea.innerHTML += `<line class="total" x1=${xPosition} x2=${xPosition} y1=${100} y2=${height} ><title>Date ${point.date} | Total ${point.total} | Rolling Rate ${point.rollingRate}</title></line>`
+            height = 100 - (bar.height * point.rollingRate)
+            graphArea.innerHTML += `<line class="rollingRate" x1=${xPosition} x2=${xPosition} y1=${100} y2=${height} ><title>Date ${point.date} | Total ${point.total} | Rolling Rate ${point.rollingRate}</title></line>`
+        });        
+
+        graphArea.innerHTML += `<text class="guidetext" x=128 y=5>${dataPoints[numberOfPoints-1].date} - ${dataPoints[0].date}</text>`
+    }
+
+    let areaOption = document.querySelector("#area");
+    areaOption.addEventListener("change", e => makeFetch(e.target.value));
+    window.onload = () => makeFetch(areaOption.value);
+    
+
+
+</script>
