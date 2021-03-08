@@ -1,13 +1,35 @@
 body{
-  color:#eef;
-  background:#222;
   font-family: sans-serif;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+}
+body.dark{
+  color:#dde;
+  background:#222;
+}
+body.light{
+  color:#222;
+  background:#dde;
+}
+#info{
+  margin: 2rem;
+  border-radius: 1rem;
+}
+#info.dark{
+  color:#dde;
+  background:#222;
+  box-shadow:-0.7rem -0.7rem 0.5rem 0 #292929, 1rem 1rem 0.5rem 0 #111;
+}
+#info.light{
+  color:#222;
+  background:#dde;
+  box-shadow:-1rem -1rem 1rem 0 #eeeef7, 1rem 1rem 1rem 0 #ccd;
 }
 h1{}
 h2{}
 h4{}
 label{}
-p{}
-.up{color:chartreuse}
-.down{color:crimson}
+p{font-size: 2rem; margin-bottom: 3rem; margin-top:1rem;}
+.up{color:chartreuse;}
+.down{color:crimson;}
