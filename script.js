@@ -31,6 +31,15 @@ function handleData(response){
   rateElement.innerHTML = response.rollingRate
   directionElement.innerHTML = {"UP": "UP [^]", "DOWN": "DOWN [v]"}[response.direction];
   directionElement.className = {"UP": "up", "DOWN": "down"}[response.direction];
+
+  // This colours the rolling rate based on the colour key of Covid Cases Map
+  rateElement.className = response.rollingRate < 10? "lt10" :
+  response.rollingRate < 20? "lt20" :
+  response.rollingRate < 50? "lt50" :
+  response.rollingRate < 100? "lt100" :
+  response.rollingRate < 200? "lt200" :
+  response.rollingRate < 400? "lt400" :
+  response.rollingRate < 800? "lt800" : "over800"
 }
 
 areaInput.addEventListener("change", e => makeFetch(e.target.value));

@@ -26,10 +26,16 @@ body.light{
   background:#dde;
   box-shadow:-1rem -1rem 1rem 0 #eeeef7, 1rem 1rem 1rem 0 #ccd;
 }
-h1{}
-h2{}
-h4{}
-label{}
 p{font-size: 2rem; margin-bottom: 3rem; margin-top:1rem;}
-.up{color:chartreuse;}
-.down{color:crimson;}
+
+/*lt refers to less than*/
+.lt10{color:rgb(224, 229, 67);}
+.lt50{color:rgb(116, 187, 104);}
+.lt100{color:rgb(57, 147, 132);}
+.lt200{color:rgb(32, 103, 171);}
+.lt400{color:rgb(18, 64, 127);}
+.lt800{color:rgb(83, 8, 74);}
+.over800{color:rgb(43, 2, 38);}
+
+.up{color:crimson;}
+.down{color:chartreuse;}
